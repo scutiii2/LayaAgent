@@ -1,0 +1,47 @@
+# Laya service: N replicas behind one nginx address.
+# Start:  docker compose up -d --build          (callers use http://<host>:9120)
+# Scale:  LAYA_REPLICAS=3 docker compose up -d --build, then: docker compose restart laya_lb
+# Each replica holds its own copy of the models in RAM; the downloaded weights are shared in `models`.
+
+name: laya
+
+services:
+  laya:
+    build: .
+    restart: unless-stopped
+    environment:
+      LAYA_TOKEN: ${LAYA_TOKEN:-}
+      LAYA_WARM: "1"
+    volumes:
+      - models:/models
+    deploy:
+      replicas: ${LAYA_REPLICAS:-2}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9120/health')"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+    networks: [laya]
+
+  laya_lb:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${LAYA_PORT:-9120}:9120"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      laya:
+        condition: service_healthy
+    networks: [laya, citadel]
+
+volumes:
+  models:
+
+networks:
+  laya:
+  # Join the Citadel stack's network so garrison can reach http://laya_lb:9120. Start the Citadel stack first:
+  # it creates this network.
+  citadel:
+    name: citadel_core
+    external: true
