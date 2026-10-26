@@ -23,7 +23,7 @@ There are two ways to run it. Pick one: both use host port 9120.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `LAYA_REPLICAS` | `2` | Number of `laya` containers. Read by Compose, not the service. |
+| `LAYA_REPLICAS` | `1` | Number of `laya` containers. Read by Compose, not the service. |
 | `LAYA_PORT` | `9120` | Host port `laya_lb` publishes. Inside the containers the service always listens on 9120. |
 | `LAYA_TOKEN` | empty | When set, every call except `/health` must send it as `X-Internal-Token`. Callers set the same value (Garrison: `LAYA_TOKEN` in `apps/garrison/.env`). |
 | `LAYA_WARM` | `1` | Load both models at start. Compose sets it; with `0` the first request pays the load time. |
