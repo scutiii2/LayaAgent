@@ -15,7 +15,7 @@ services:
     volumes:
       - models:/models
     deploy:
-      replicas: ${LAYA_REPLICAS:-2}
+      replicas: ${LAYA_REPLICAS:-1}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9120/health')"]
       interval: 15s
