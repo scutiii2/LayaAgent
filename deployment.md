@@ -1,6 +1,6 @@
-# Deploying LayaAgent
+# Deploying LayaModel
 
-LayaAgent is one HTTP service (port 9120) that owns the Laya models. It runs as `laya` replicas behind an nginx
+LayaModel is one HTTP service (port 9120) that owns the Laya models. It runs as `laya` replicas behind an nginx
 load balancer, `laya_lb`. Callers use `http://<host>:9120`; they never reach a replica directly.
 
 There are two ways to run it. Pick one: both use host port 9120.
@@ -44,8 +44,8 @@ Without Docker: `run.bat` (creates `.venv_laya` on first run, listens on `127.0.
 
 ## Inside the Citadel stack
 
-The Citadel compose builds this folder through `build: ../LayaAgent`, so `LayaAgent/` must sit next to `Citadel/`
-(`Python/LayaAgent` and `Python/Citadel`). Services `laya` and `laya_lb` join the `core` network; Garrison reaches the
+The Citadel compose builds this folder through `build: ../LayaModel`, so `LayaModel/` must sit next to `Citadel/`
+(`Python/LayaModel` and `Python/Citadel`). Services `laya` and `laya_lb` join the `core` network; Garrison reaches the
 service at `http://laya_lb:9120` (its `LAYA_SERVICE_URL`, set by Compose).
 
 ```bash

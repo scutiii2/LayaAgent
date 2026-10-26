@@ -3,11 +3,11 @@ rem Deploy menu: publish the code to the live branch and/or copy the git-ignored
 rem deployment machine in ONE ssh session (one password prompt).
 rem The server refuses root over ssh, so we log in as a normal user. If the copy cannot write,
 rem option 6 copies the one-time "chown" command and opens the server's web terminal (root shell).
-rem LayaAgent must sit next to Citadel on the server: the Citadel compose builds ../LayaAgent.
+rem LayaModel must sit next to Citadel on the server: the Citadel compose builds ../LayaModel.
 rem Override the target: set DEPLOY_HOST / DEPLOY_DIR / DEPLOY_WEB_PORT before running.
 setlocal enabledelayedexpansion
 if not defined DEPLOY_HOST set "DEPLOY_HOST=lex@scutiserver1.local"
-if not defined DEPLOY_DIR set "DEPLOY_DIR=/media/ZimaOS-HD/Apps/LayaAgent"
+if not defined DEPLOY_DIR set "DEPLOY_DIR=/media/ZimaOS-HD/Apps/LayaModel"
 if not defined DEPLOY_WEB_PORT set "DEPLOY_WEB_PORT=7681"
 set "ROOT=%~dp0.."
 
@@ -70,7 +70,7 @@ echo Done.
 call :reminder ".env is on the server. In the web terminal:" "cd ../Citadel && docker compose up -d --build laya laya_lb && docker compose restart laya_lb" "(run git pull here first if the code changed)"
 exit /b 0
 
-rem :add <path relative to the LayaAgent root, same path on the server>
+rem :add <path relative to the LayaModel root, same path on the server>
 :add
 if not exist "%ROOT%\%~1" (echo skip    %~1 ^(missing locally^) & exit /b 0)
 >>"%LIST%" echo %~1
