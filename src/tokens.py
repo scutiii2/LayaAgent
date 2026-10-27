@@ -23,6 +23,7 @@ class TokenStore:
     def __init__(self, path: str | os.PathLike[str]) -> None:
         self._path = Path(path)
         self.settings_path = self._path.with_name("settings.json")
+        self._pending: dict[str, int] = {}  # uses not yet written, per token id
 
     def _load(self) -> list[dict]:
         try:
@@ -63,17 +64,19 @@ class TokenStore:
         os.replace(temp, self._path)
 
     def list(self) -> list[dict]:
-        return [{**{k: v for k, v in row.items() if k != "hash"}, "last_used": row.get("last_used")}
+        return [{**{k: v for k, v in row.items() if k != "hash"},
+                 "last_used": row.get("last_used"), "requests": row.get("requests", 0)}
                 for row in self._load()]
 
     def create(self, name: str) -> dict:
         """The plaintext token is returned once and never stored."""
         token = PREFIX + secrets.token_urlsafe(32)
         row = {"id": secrets.token_hex(4), "name": name, "created": int(time.time()),
-               "last_used": None, "hash": _hash(token)}
+               "last_used": None, "requests": 0, "hash": _hash(token)}
         with self._edit() as rows:
             self._save([*rows, row])
-        return {"id": row["id"], "name": name, "created": row["created"], "last_used": None, "token": token}
+        return {"id": row["id"], "name": name, "created": row["created"], "last_used": None, "requests": 0,
+                "token": token}
 
     def revoke(self, token_id: str) -> bool:
         with self._edit() as rows:
@@ -88,9 +91,12 @@ class TokenStore:
             for row in rows:
                 if secrets.compare_digest(digest, row["hash"]):
                     now = int(time.time())
+                    # shortcut: uses between writes are counted in memory, so a crash loses up to a minute of them.
+                    self._pending[row["id"]] = self._pending.get(row["id"], 0) + 1
                     # The persisted value shares the throttle across replicas/restarts.
                     if row.get("last_used") is None or now - row["last_used"] >= 60:
                         row["last_used"] = now
+                        row["requests"] = row.get("requests", 0) + self._pending.pop(row["id"])
                         self._save(rows)
                     return True
         return False
