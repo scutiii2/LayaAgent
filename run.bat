@@ -14,5 +14,5 @@ if not exist ".venv_laya\Scripts\python.exe" (
     call .venv_laya\Scripts\activate
 )
 
-python -m laya_service.app
+python src/app.py
 pause

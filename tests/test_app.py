@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from laya_service.app import create_app
-from laya_service.registry import Registry
+from app import create_app
+from registry import Registry
 
 BODY = {"strategy": "english-only", "text": "hi", "max_len": 512,
         "questions": {"q": {"type": "noul", "instructions": "x"}}}
@@ -99,7 +99,7 @@ def test_validate_is_the_one_definition_of_a_valid_question_set():
 
 
 def test_each_project_gets_its_own_revocable_token(tmp_path):
-    from laya_service.tokens import TokenStore
+    from tokens import TokenStore
     c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), 'admin', tokens=TokenStore(tmp_path / 't.json')))
     path = "/v1/ask" if "LAYA" == "LAYA" else "/v1/chat"
     admin = {"X-Internal-Token": "admin"}
@@ -115,8 +115,8 @@ def test_each_project_gets_its_own_revocable_token(tmp_path):
 
 def test_torch_threads_are_reported_and_set_by_the_admin(monkeypatch):
     seen = []
-    monkeypatch.setattr("laya_service.app._set_torch_threads", seen.append)
-    monkeypatch.setattr("laya_service.app._torch_threads", lambda: 3)
+    monkeypatch.setattr("app._set_torch_threads", seen.append)
+    monkeypatch.setattr("app._torch_threads", lambda: 3)
     c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), 'admin'))
     assert c.get("/health").json()["torch_threads"] == 3
     assert c.put("/admin/threads", json={"torch_threads": 2}).status_code == 401

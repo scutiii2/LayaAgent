@@ -20,11 +20,11 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from laya_service import strategies
-from laya_service.answers import InputTooLong, check_questions
-from laya_service.registry import Registry
-from laya_service import settings
-from laya_service.tokens import TokenStore
+import strategies
+from answers import InputTooLong, check_questions
+from registry import Registry
+import settings
+from tokens import TokenStore
 
 _log = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ def create_app(registry: Registry | None = None, token: str | None = None, warm:
             raise HTTPException(404, "No such token")
         return {"ok": True}
 
-    web = Path(os.environ.get("LAYA_WEB_DIR", Path(__file__).resolve().parents[2] / "web"))
+    web = Path(os.environ.get("LAYA_WEB_DIR", Path(__file__).resolve().parents[1] / "web"))
     if web.is_dir():
         app.mount("/admin", StaticFiles(directory=web, html=True))
 

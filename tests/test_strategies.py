@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from laya_service.app import create_app
-from laya_service.registry import Registry
+from app import create_app
+from registry import Registry
 
 ENGLISH, TYPED = "convaiinnovations/laya", "typed-decisions"
 CHOICE = {"type": "choice", "instructions": "Which?", "criteria": {"a": "A", "b": "B", "c": "C"}}

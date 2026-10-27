@@ -1,4 +1,4 @@
-# laya_service
+# LayaModel
 
 The one place Laya (the `laya` package, torch and the model weights) is installed. Projects send it
 typed questions over HTTP instead of loading the models themselves.
