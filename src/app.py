@@ -157,6 +157,12 @@ def create_app(registry: Registry | None = None, admin_password: str | None = No
         settings.save(tokens.settings_path, torch_threads=body.torch_threads)
         return {"torch_threads": _torch_threads()}
 
+    @app.get("/admin/workers", dependencies=[Depends(admin)])
+    def workers() -> dict[str, Any]:
+        """Read-only: replicas are a Docker Compose setting (LAYA_REPLICAS), which the service cannot change itself."""
+        replicas = os.environ.get("LAYA_REPLICAS", "").strip()
+        return {"replicas": int(replicas) if replicas.isdigit() else None}
+
     @app.get("/admin/tokens", dependencies=[Depends(admin)])
     def list_tokens() -> dict[str, Any]:
         return {"tokens": tokens.list()}

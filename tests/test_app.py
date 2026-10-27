@@ -117,3 +117,11 @@ def test_torch_threads_are_reported_and_set_by_the_admin(monkeypatch):
     assert c.put("/admin/threads", json={"torch_threads": 2}, headers={"X-Internal-Token": "admin"}).json() == {"torch_threads": 3}
     assert seen == [2]
 
+
+
+def test_workers_are_read_only_and_admin_only(monkeypatch):
+    monkeypatch.setenv("LAYA_REPLICAS", "3")
+    c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), "admin"))
+    assert c.get("/admin/workers").status_code == 401
+    assert c.get("/admin/workers", headers={"X-Internal-Token": "admin"}).json() == {"replicas": 3}
+    assert c.put("/admin/workers", json={"replicas": 5}, headers={"X-Internal-Token": "admin"}).status_code == 405
