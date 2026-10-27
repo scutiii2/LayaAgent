@@ -27,6 +27,7 @@ There are two ways to run it. Pick one: both use host port 9120.
 | `LAYA_PORT` | `9120` | Host port `laya_lb` publishes. Inside the containers the service always listens on 9120. |
 | `LAYA_TOKEN` | empty | When set, every call except `/health` must send it as `X-Internal-Token`. Callers set the same value (Garrison: `LAYA_TOKEN` in `apps/garrison/.env`). |
 | `LAYA_WARM` | `1` | Load both models at start. Compose sets it; with `0` the first request pays the load time. |
+| `LAYA_TORCH_THREADS` | torch decides | Cap on torch CPU threads; `/health` reports the value in use, `/admin/` can change it and saves the value (other replicas apply it on restart). |
 | `LAYA_OFFLINE` | unset | `1` uses only already-downloaded weights. Neither compose file passes it: add it under `environment:` of `laya` to use it. |
 
 Put the variables in a `.env` next to the compose file that runs the stack (this folder, or `Citadel/`).

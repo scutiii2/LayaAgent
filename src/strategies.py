@@ -22,8 +22,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from laya_service.answers import InputTooLong, normalize
-from laya_service.registry import Registry
+from answers import InputTooLong, normalize
+from registry import Registry
 
 ENGLISH, TYPED = "laya-english", "laya-typed"
 CHECKPOINT = {ENGLISH: "convaiinnovations/laya", TYPED: "typed-decisions"}

@@ -12,8 +12,10 @@ services:
     environment:
       LAYA_TOKEN: ${LAYA_TOKEN:-}
       LAYA_WARM: "1"
+      LAYA_TORCH_THREADS: ${LAYA_TORCH_THREADS:-}
     volumes:
       - models:/models
+      - tokens:/data
     deploy:
       replicas: ${LAYA_REPLICAS:-1}
     healthcheck:
@@ -37,6 +39,7 @@ services:
 
 volumes:
   models:
+  tokens:
 
 networks:
   laya:
