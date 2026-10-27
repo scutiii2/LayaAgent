@@ -25,6 +25,7 @@ DEPLOY_PATHS = [
     "nginx.conf",
     "pyproject.toml",
     "src",
+    "web",
     "deployment.md",
 ]
 # Left out of live: Python tests/ folders are not built into the image.
