@@ -25,8 +25,7 @@ There are two ways to run it. Pick one: both use host port 9120.
 |---|---|---|
 | `LAYA_REPLICAS` | `1` | Number of `laya` containers. Read by Compose, not the service. |
 | `LAYA_PORT` | `9120` | Host port `laya_lb` publishes. Inside the containers the service always listens on 9120. |
-| `LAYA_ADMIN_PASSWORD` | `LAYA_TOKEN` | Password for the `/admin/` page, where per-project tokens are made. |
-| `LAYA_TOKEN` | empty | When set, every call except `/health` must send it as `X-Internal-Token`. Callers set the same value (Garrison: `LAYA_TOKEN` in `apps/garrison/.env`). |
+| `LAYA_ADMIN_PASSWORD` | empty | Password for the `/admin/` page, where per-project tokens are made. When set, every call except `/health` must send one of those tokens as `X-Internal-Token` (Garrison: `LAYA_TOKEN` in `apps/garrison/.env`). Empty = no auth. |
 | `LAYA_WARM` | `1` | Load both models at start. Compose sets it; with `0` the first request pays the load time. |
 | `LAYA_TORCH_THREADS` | torch decides | Cap on torch CPU threads; `/health` reports the value in use, `/admin/` can change it and saves the value (other replicas apply it on restart). |
 | `LAYA_OFFLINE` | unset | `1` uses only already-downloaded weights. Neither compose file passes it: add it under `environment:` of `laya` to use it. |
@@ -79,7 +78,7 @@ curl -X POST http://127.0.0.1:9120/v1/validate -H "Content-Type: application/jso
 ```
 
 A 422 means the service is up and checking requests (an empty question set is invalid). Omit the token header when
-`LAYA_TOKEN` is empty.
+`LAYA_ADMIN_PASSWORD` is empty.
 
 ## Scaling
 
@@ -109,7 +108,7 @@ Rebuilding replaces the replicas, so restart `laya_lb` afterwards. The weights v
 | Replicas restart in a loop | Out of RAM for the models. Lower `LAYA_REPLICAS`. |
 | Garrison: "Laya is not configured: set LAYA_SERVICE_URL" | `LAYA_SERVICE_URL` is empty (running outside Compose and not set). |
 | Garrison: "could not be reached" | Service not started, or not on Garrison's network (`core` / `citadel_core`). |
-| 401 "Invalid token" from every call but `/health` | `LAYA_TOKEN` differs between the service and the caller. |
+| 401 "Invalid token" from every call but `/health` | the caller sends no project token, or a revoked one. |
 | `bind: address already in use` on 9120 | Standalone and Citadel stacks both running. Stop one. |
 | nginx 502 after scaling | `laya_lb` not restarted after the replica count changed. |
 | Offline start fails to load a model | `LAYA_OFFLINE=1` but the weights are not in the `models` volume yet. |

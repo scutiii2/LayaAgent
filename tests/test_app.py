@@ -12,8 +12,8 @@ class FakeEngine:
         return {"answers": {"q": {"noul": 0.5, "answer_confidence": 0.9}}, "usage": {"input_tokens": len(text)}}
 
 
-def client(token=None, loader=lambda checkpoint: FakeEngine()):
-    return TestClient(create_app(Registry(loader), token))
+def client(admin_password=None, loader=lambda checkpoint: FakeEngine()):
+    return TestClient(create_app(Registry(loader), admin_password))
 
 
 def test_ask_loads_a_model_once_and_reports_each_call():
@@ -25,13 +25,6 @@ def test_ask_loads_a_model_once_and_reports_each_call():
     c.post("/v1/ask", json=BODY)
     assert loads == ["convaiinnovations/laya"]
     assert c.get("/health").json()["models"] == {"convaiinnovations/laya": True, "typed-decisions": False}
-
-
-def test_token_is_required_when_configured():
-    c = client(token="s3cret")
-    assert c.post("/v1/ask", json=BODY).status_code == 401
-    assert c.post("/v1/ask", json=BODY, headers={"X-Internal-Token": "s3cret"}).status_code == 200
-    assert c.get("/health").status_code == 200
 
 
 def test_engine_failure_is_a_generic_500():
@@ -124,9 +117,3 @@ def test_torch_threads_are_reported_and_set_by_the_admin(monkeypatch):
     assert c.put("/admin/threads", json={"torch_threads": 2}, headers={"X-Internal-Token": "admin"}).json() == {"torch_threads": 3}
     assert seen == [2]
 
-
-def test_admin_password_is_separate_from_the_shared_token():
-    c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), "shared", admin_password="pw"))
-    assert c.get("/admin/tokens", headers={"X-Internal-Token": "shared"}).status_code == 401
-    assert c.get("/admin/tokens", headers={"X-Internal-Token": "pw"}).status_code == 200
-    assert c.post("/v1/ask", json=BODY, headers={"X-Internal-Token": "shared"}).status_code == 200

@@ -13,7 +13,7 @@ typed questions over HTTP instead of loading the models themselves.
 | `POST /v1/combine` | `{"voters", "options", "prune_ratio", "pair_ratio"}` → the voters over `options` (renormalised), their `average`, the `kept` options and, with two voters or more, the pairwise `final` comparison. For a caller that adds its own voter (Garrison's cloud fallback, Jev) to the local models. |
 | `GET /health` | `{"status": "ok", "models": {name: loaded}}`. No token needed. |
 
-When `LAYA_TOKEN` is set, send it as `X-Internal-Token`. Errors: 422 bad request or question, 413 text longer
+When `LAYA_ADMIN_PASSWORD` is set, send a project token (made on `/admin/`) as `X-Internal-Token`. Errors: 422 bad request or question, 413 text longer
 than the window, 502 no model could answer, 500 anything else. A 413 or 502 body is
 `{"detail": {"message", "calls"}}`, so the caller can still log the model calls that were made.
 
@@ -55,14 +55,14 @@ Citadel stack, first start, scaling, troubleshooting): [deployment.md](deploymen
 
 ## Settings
 
-`LAYA_HOST` (127.0.0.1), `LAYA_PORT` (9120), `LAYA_ADMIN_PASSWORD` (unlocks `/admin/`; falls back to `LAYA_TOKEN`), `LAYA_TOKEN`, `LAYA_WARM` (1 loads both models at start), `LAYA_TORCH_THREADS` (cap on torch CPU threads; `/health` reports the value in use),
+`LAYA_HOST` (127.0.0.1), `LAYA_PORT` (9120), `LAYA_ADMIN_PASSWORD` (unlocks `/admin/`; empty = no auth), `LAYA_WARM` (1 loads both models at start), `LAYA_TORCH_THREADS` (cap on torch CPU threads; `/health` reports the value in use),
 `LAYA_OFFLINE` (1 uses only already downloaded weights).
 
 ## Consumers
 
 Every project reaches the service the same way: `POST /v1/ask` with a strategy.
 
-- **Garrison** (`apps/garrison/src/llm/laya_agent.py`, class `LAYAAgent`): set `LAYA_SERVICE_URL` and `LAYA_TOKEN`.
+- **Garrison** (`apps/garrison/src/llm/laya_agent.py`, class `LAYAAgent`): set `LAYA_SERVICE_URL` and `LAYA_TOKEN` to a project token made on `/admin/`.
   Its triage flow asks for a strategy per question type and adds Jev for what the service could not settle,
   using `/v1/combine`, and checks questions with `/v1/validate`. Garrison loads no Laya model and keeps no copy of
   the question rules.
