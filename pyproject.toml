@@ -1,7 +1,9 @@
 [project]
 name = "laya-service"
 description = "One HTTP service that owns the Laya models; every project asks it instead of installing laya itself"
-version = "0.1.0"
+version = "1.0.0"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
