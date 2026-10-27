@@ -13,4 +13,4 @@ RUN pip install .
 RUN python -c "import torch; assert torch.version.cuda is None and torch.version.hip is None, 'CPU-only torch required'"
 
 EXPOSE 9120
-CMD ["python", "-m", "laya_service.app"]
+CMD ["python", "src/app.py"]
