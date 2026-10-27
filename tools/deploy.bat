@@ -97,7 +97,8 @@ echo.
 echo ---- NEXT ON THE SERVER ----
 echo %~1
 echo   cd %DEPLOY_DIR%
-echo   %~2
+set "SHOWCMD=%~2"
+echo   !SHOWCMD!
 if not "%~3"=="" echo   %~3
 echo ----------------------------
 exit /b 0
