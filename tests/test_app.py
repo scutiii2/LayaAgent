@@ -96,3 +96,30 @@ def test_validate_is_the_one_definition_of_a_valid_question_set():
     message = c.post("/v1/validate", json={"questions": bad[6]}).json()["detail"]
     assert "criteria must be an object of 2 to 10 option: description strings" in message
     assert c.post("/v1/ask", json={**BODY, "questions": bad[3]}).status_code == 422
+
+
+def test_each_project_gets_its_own_revocable_token(tmp_path):
+    from laya_service.tokens import TokenStore
+    c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), 'admin', tokens=TokenStore(tmp_path / 't.json')))
+    path = "/v1/ask" if "LAYA" == "LAYA" else "/v1/chat"
+    admin = {"X-Internal-Token": "admin"}
+    assert c.get("/admin/tokens").status_code == 401
+    made = c.post("/admin/tokens", json={"name": "proj"}, headers=admin).json()
+    use = {"X-Internal-Token": made["token"]}
+    assert c.post(path, json=BODY, headers=use).status_code == 200
+    assert c.get("/admin/tokens", headers=use).status_code == 401  # a project token is not an admin
+    assert "token" not in c.get("/admin/tokens", headers=admin).json()["tokens"][0]
+    assert c.delete(f"/admin/tokens/{made['id']}", headers=admin).status_code == 200
+    assert c.post(path, json=BODY, headers=use).status_code == 401
+
+
+def test_torch_threads_are_reported_and_set_by_the_admin(monkeypatch):
+    seen = []
+    monkeypatch.setattr("laya_service.app._set_torch_threads", seen.append)
+    monkeypatch.setattr("laya_service.app._torch_threads", lambda: 3)
+    c = TestClient(create_app(Registry(lambda checkpoint: FakeEngine()), 'admin'))
+    assert c.get("/health").json()["torch_threads"] == 3
+    assert c.put("/admin/threads", json={"torch_threads": 2}).status_code == 401
+    assert c.put("/admin/threads", json={"torch_threads": 0}, headers={"X-Internal-Token": "admin"}).status_code == 422
+    assert c.put("/admin/threads", json={"torch_threads": 2}, headers={"X-Internal-Token": "admin"}).json() == {"torch_threads": 3}
+    assert seen == [2]
