@@ -26,6 +26,7 @@
 <div id="app" hidden>
   <form id="create"><input id="name" placeholder="Project name" required maxlength="64"><button>Create token</button></form>
   <form id="threads"><label for="count">Torch CPU threads <small>(saved; other replicas apply it on restart)</small></label><input id="count" type="number" min="1" max="256" required><button>Apply</button></form>
+  <p id="workers"></p>
   <p id="fresh" hidden></p>
   <table><thead><tr><th>Name</th><th>Created</th><th></th></tr></thead><tbody id="rows"></tbody></table>
 </div>
@@ -43,6 +44,9 @@ async function refresh() {
   try {
     const rows = (await call("GET", "")).tokens;
     $("error").textContent = ""; $("app").hidden = false;
+    const workers = await call("GET", "", undefined, "../admin/workers");
+    $("workers").textContent = "Replicas: " + (workers.replicas ?? "unknown") +
+      ". Each loads its own models and takes one request per model at a time. To change: set LAYA_REPLICAS in .env, then run \"docker compose up -d --build\" and \"docker compose restart laya_lb\" on the server.";
     $("count").value = (await (await fetch("../health")).json()).torch_threads ?? "";
     $("rows").replaceChildren(...rows.map((row) => {
       const tr = document.createElement("tr");
