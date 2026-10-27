@@ -1,10 +1,10 @@
-"""Per-project API tokens: a JSON file of sha256 hashes, so any replica sharing the file accepts a token at once.
+"""Per-project API tokens stored as hashes, shared by replicas through one JSON file.
 
-shortcut: read-modify-write without a lock, so two admins creating a token in the same instant can lose one;
-upgrade to a database if the service ever has more than one admin."""
-
+Mutations lock a companion file before reading, then atomically replace the JSON.
+"""
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -30,6 +30,32 @@ class TokenStore:
         except FileNotFoundError:
             return []
 
+    @contextmanager
+    def _edit(self):
+        """Serialize read-modify-write across threads and service replicas."""
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        with self._path.with_suffix(self._path.suffix + ".lock").open("a+b") as lock:
+            if os.name == "nt":
+                import msvcrt
+
+                if lock.tell() == 0:
+                    lock.write(b"\0")
+                    lock.flush()
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                yield self._load()
+            finally:
+                if os.name == "nt":
+                    lock.seek(0)
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+
     def _save(self, rows: list[dict]) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         temp = self._path.with_suffix(".tmp")
@@ -37,22 +63,34 @@ class TokenStore:
         os.replace(temp, self._path)
 
     def list(self) -> list[dict]:
-        return [{k: v for k, v in row.items() if k != "hash"} for row in self._load()]
+        return [{**{k: v for k, v in row.items() if k != "hash"}, "last_used": row.get("last_used")}
+                for row in self._load()]
 
     def create(self, name: str) -> dict:
-        """The new token's row plus its plaintext `token`, which is shown this once and never stored."""
+        """The plaintext token is returned once and never stored."""
         token = PREFIX + secrets.token_urlsafe(32)
-        row = {"id": secrets.token_hex(4), "name": name, "created": int(time.time()), "hash": _hash(token)}
-        self._save([*self._load(), row])
-        return {"id": row["id"], "name": name, "created": row["created"], "token": token}
+        row = {"id": secrets.token_hex(4), "name": name, "created": int(time.time()),
+               "last_used": None, "hash": _hash(token)}
+        with self._edit() as rows:
+            self._save([*rows, row])
+        return {"id": row["id"], "name": name, "created": row["created"], "last_used": None, "token": token}
 
     def revoke(self, token_id: str) -> bool:
-        rows = self._load()
-        kept = [row for row in rows if row["id"] != token_id]
-        if len(kept) != len(rows):
-            self._save(kept)
-        return len(kept) != len(rows)
+        with self._edit() as rows:
+            kept = [row for row in rows if row["id"] != token_id]
+            if len(kept) != len(rows):
+                self._save(kept)
+            return len(kept) != len(rows)
 
     def valid(self, token: str) -> bool:
         digest = _hash(token)
-        return any(secrets.compare_digest(digest, row["hash"]) for row in self._load())
+        with self._edit() as rows:
+            for row in rows:
+                if secrets.compare_digest(digest, row["hash"]):
+                    now = int(time.time())
+                    # The persisted value shares the throttle across replicas/restarts.
+                    if row.get("last_used") is None or now - row["last_used"] >= 60:
+                        row["last_used"] = now
+                        self._save(rows)
+                    return True
+        return False

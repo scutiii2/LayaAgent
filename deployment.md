@@ -9,7 +9,7 @@ There are two ways to run it. Pick one: both use host port 9120.
 |---|---|---|
 | Where | this folder's `docker-compose.yml` | `Citadel/docker-compose.yml` |
 | Compose project | `laya` | `citadel` |
-| Network | its own `laya` net, plus the external `citadel_core` | Citadel's `core` |
+| Network | its own `laya` net | Citadel's `core` |
 | Start | `docker compose up -d --build` here | `docker compose up -d --build` in `Citadel/` |
 
 ## Requirements
@@ -34,8 +34,8 @@ Put the variables in a `.env` next to the compose file that runs the stack (this
 
 ## Standalone
 
-Citadel's network must exist first if Garrison should reach the service, so start the Citadel stack once, or drop
-`citadel` from `laya_lb`'s networks and the `citadel` network block in `docker-compose.yml` if you do not need Garrison.
+The standalone stack does not depend on Citadel or any other project. A caller reaches it at
+`http://<host>:9120`, or from another container on the same host at `http://host.docker.internal:9120`.
 
 ```bash
 docker compose up -d --build
@@ -107,7 +107,7 @@ Rebuilding replaces the replicas, so restart `laya_lb` afterwards. The weights v
 | `laya_lb` never starts | No replica is healthy yet (first download, or out of memory). Check `docker compose logs laya`. |
 | Replicas restart in a loop | Out of RAM for the models. Lower `LAYA_REPLICAS`. |
 | Garrison: "Laya is not configured: set LAYA_SERVICE_URL" | `LAYA_SERVICE_URL` is empty (running outside Compose and not set). |
-| Garrison: "could not be reached" | Service not started, or not on Garrison's network (`core` / `citadel_core`). |
+| Garrison: "could not be reached" | Service not started, or Garrison's `LAYA_SERVICE_URL` does not point at it. |
 | 401 "Invalid token" from every call but `/health` | the caller sends no project token, or a revoked one. |
 | `bind: address already in use` on 9120 | Standalone and Citadel stacks both running. Stop one. |
 | nginx 502 after scaling | `laya_lb` not restarted after the replica count changed. |

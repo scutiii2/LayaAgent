@@ -36,16 +36,13 @@ services:
     depends_on:
       laya:
         condition: service_healthy
-    networks: [laya, citadel]
+    networks: [laya]
 
 volumes:
   models:
   tokens:
 
+# Laya knows nothing about its callers. A caller on the same Docker host reaches it through the published port
+# (http://host.docker.internal:9120), or joins the `laya_laya` network on its own side.
 networks:
   laya:
-  # Join the Citadel stack's network so garrison can reach http://laya_lb:9120. Start the Citadel stack first:
-  # it creates this network.
-  citadel:
-    name: citadel_core
-    external: true
