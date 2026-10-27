@@ -6,7 +6,7 @@ rem option 6 copies the one-time "chown" command and opens the server's web term
 rem LayaModel must sit next to Citadel on the server: the Citadel compose builds ../LayaModel.
 rem Override the target: set DEPLOY_HOST / DEPLOY_DIR / DEPLOY_WEB_PORT before running.
 setlocal enabledelayedexpansion
-if not defined DEPLOY_HOST set "DEPLOY_HOST=lex@scutiserver1.local"
+if not defined DEPLOY_HOST set "DEPLOY_HOST=user@your-server.local"
 if not defined DEPLOY_DIR set "DEPLOY_DIR=/media/ZimaOS-HD/Apps/LayaModel"
 if not defined DEPLOY_WEB_PORT set "DEPLOY_WEB_PORT=7681"
 set "ROOT=%~dp0.."

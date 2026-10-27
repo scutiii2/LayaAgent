@@ -76,4 +76,7 @@ Every project reaches the service the same way: `POST /v1/ask` with a strategy.
 - **Armory** keeps its `LAYA_URL`: it asks Garrison's triage agent, which asks this service.
 - Not yet moved: `ascension`, `chess`, `sortie` and `ClaudeRouters` still carry their own copy of Laya.
 
-Not a git repository yet; run `git init` here before committing.
+## License
+
+The service code is MIT. The `laya` package and the Laya weights it downloads are by Convai Innovations
+under Apache-2.0; read their terms before redistributing the weights. See [LICENSE](LICENSE) and [CHANGELOG.md](CHANGELOG.md).
