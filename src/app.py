@@ -79,12 +79,11 @@ def _set_torch_threads(threads: int) -> None:
     torch.set_num_threads(threads)
 
 
-def create_app(registry: Registry | None = None, token: str | None = None, warm: bool = False,
-               tokens: TokenStore | None = None, admin_password: str | None = None) -> FastAPI:
-    """`token` (LAYA_TOKEN), when set, must arrive in the X-Internal-Token header. `admin_password` (LAYA_ADMIN_PASSWORD,
-    falling back to `token`) unlocks /admin/, where each project gets a token of its own. `tokens` holds those
-    (LAYA_TOKENS_FILE)."""
-    admin_password = admin_password or token
+def create_app(registry: Registry | None = None, admin_password: str | None = None, warm: bool = False,
+               tokens: TokenStore | None = None) -> FastAPI:
+    """`admin_password` (LAYA_ADMIN_PASSWORD) unlocks /admin/, where each project gets a token of its own; when it
+    is set, every call except /health must send one of those tokens in the X-Internal-Token header. Unset = no
+    auth at all (local use only). `tokens` holds the project tokens (LAYA_TOKENS_FILE)."""
     tokens = tokens or TokenStore(os.environ.get("LAYA_TOKENS_FILE", "tokens.json"))
     registry = registry or Registry(offline=os.environ.get("LAYA_OFFLINE") == "1")
 
@@ -95,7 +94,7 @@ def create_app(registry: Registry | None = None, token: str | None = None, warm:
         yield
 
     def authorize(x_internal_token: str = Header("")) -> None:
-        if (token or admin_password) and not (token and hmac.compare_digest(x_internal_token, token))                 and not tokens.valid(x_internal_token):
+        if admin_password and not tokens.valid(x_internal_token):
             raise HTTPException(401, "Invalid token")
 
     def admin(x_internal_token: str = Header("")) -> None:
@@ -186,8 +185,7 @@ def main() -> None:
     threads = saved.get("torch_threads") or os.environ.get("LAYA_TORCH_THREADS", "").strip()
     if threads:  # before the models load
         _set_torch_threads(int(threads))
-    app = create_app(token=os.environ.get("LAYA_TOKEN") or None,
-                     admin_password=os.environ.get("LAYA_ADMIN_PASSWORD") or None, warm=os.environ.get("LAYA_WARM", "1") == "1")
+    app = create_app(admin_password=os.environ.get("LAYA_ADMIN_PASSWORD") or None, warm=os.environ.get("LAYA_WARM", "1") == "1")
     uvicorn.run(app, host=os.environ.get("LAYA_HOST", "127.0.0.1"), port=int(os.environ.get("LAYA_PORT", "9120")))
 
 
