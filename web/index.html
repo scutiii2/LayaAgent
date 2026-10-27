@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya tokens</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+  input, button { font: inherit; padding: .4rem .6rem; }
+  form { display: flex; gap: .5rem; margin: 1rem 0; }
+  form input { flex: 1; }
+  #threads label { align-self: center; }
+  #threads input { flex: 0 0 5rem; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: .4rem; border-bottom: 1px solid #8884; }
+  #fresh { padding: .75rem; border: 1px solid #8886; word-break: break-all; }
+  #error { color: crimson; }
+</style>
+</head>
+<body>
+<h1>Laya tokens</h1>
+<p>Callers send a token in the <code>X-Internal-Token</code> header. Enter the admin token (<code>LAYA_TOKEN</code>) to manage them.</p>
+<form id="login"><input id="admin" type="password" placeholder="Admin token" autocomplete="off"><button>Load</button></form>
+<p id="error"></p>
+<div id="app" hidden>
+  <form id="create"><input id="name" placeholder="Project name" required maxlength="64"><button>Create token</button></form>
+  <form id="threads"><label for="count">Torch CPU threads <small>(saved; other replicas apply it on restart)</small></label><input id="count" type="number" min="1" max="256" required><button>Apply</button></form>
+  <p id="fresh" hidden></p>
+  <table><thead><tr><th>Name</th><th>Created</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let admin = "";
+async function call(method, path, body, url = "../admin/tokens") {
+  const response = await fetch(url + path, {
+    method, headers: {"X-Internal-Token": admin, "Content-Type": "application/json"},
+    body: body && JSON.stringify(body)});
+  if (!response.ok) throw new Error(response.status === 401 ? "Wrong admin token" : "Request failed (" + response.status + ")");
+  return response.json();
+}
+async function refresh() {
+  try {
+    const rows = (await call("GET", "")).tokens;
+    $("error").textContent = ""; $("app").hidden = false;
+    $("count").value = (await (await fetch("../health")).json()).torch_threads ?? "";
+    $("rows").replaceChildren(...rows.map((row) => {
+      const tr = document.createElement("tr");
+      for (const text of [row.name, new Date(row.created * 1000).toLocaleString()]) {
+        const td = document.createElement("td"); td.textContent = text; tr.append(td);
+      }
+      const button = document.createElement("button"); button.textContent = "Revoke";
+      button.onclick = async () => { if (confirm("Revoke " + row.name + "?")) { await call("DELETE", "/" + row.id); refresh(); } };
+      const td = document.createElement("td"); td.append(button); tr.append(td);
+      return tr;
+    }));
+  } catch (error) { $("error").textContent = error.message; $("app").hidden = true; }
+}
+$("login").onsubmit = (event) => { event.preventDefault(); admin = $("admin").value; refresh(); };
+$("threads").onsubmit = async (event) => {
+  event.preventDefault();
+  try { await call("PUT", "", {torch_threads: Number($("count").value)}, "../admin/threads"); refresh(); }
+  catch (error) { $("error").textContent = error.message; }
+};
+$("create").onsubmit = async (event) => {
+  event.preventDefault();
+  try {
+    const row = await call("POST", "", {name: $("name").value});
+    $("fresh").hidden = false; $("fresh").textContent = "Copy now, it is not shown again: " + row.token;
+    $("name").value = ""; refresh();
+  } catch (error) { $("error").textContent = error.message; }
+};
+</script>
+</body>
+</html>
