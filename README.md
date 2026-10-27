@@ -55,7 +55,7 @@ Citadel stack, first start, scaling, troubleshooting): [deployment.md](deploymen
 
 ## Settings
 
-`LAYA_HOST` (127.0.0.1), `LAYA_PORT` (9120), `LAYA_TOKEN`, `LAYA_WARM` (1 loads both models at start), `LAYA_TORCH_THREADS` (cap on torch CPU threads; `/health` reports the value in use),
+`LAYA_HOST` (127.0.0.1), `LAYA_PORT` (9120), `LAYA_ADMIN_PASSWORD` (unlocks `/admin/`; falls back to `LAYA_TOKEN`), `LAYA_TOKEN`, `LAYA_WARM` (1 loads both models at start), `LAYA_TORCH_THREADS` (cap on torch CPU threads; `/health` reports the value in use),
 `LAYA_OFFLINE` (1 uses only already downloaded weights).
 
 ## Consumers
