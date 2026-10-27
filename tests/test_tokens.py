@@ -9,7 +9,7 @@ def test_new_token_has_null_last_used(tmp_path):
     store = TokenStore(tmp_path / "tokens.json")
     made = store.create("project")
     assert made["last_used"] is None
-    assert store.list() == [{"id": made["id"], "name": "project", "created": made["created"], "last_used": None}]
+    assert store.list() == [{"id": made["id"], "name": "project", "created": made["created"], "last_used": None, "requests": 0}]
 
 
 def test_authenticated_use_is_persisted_and_writes_are_throttled(tmp_path, monkeypatch):
@@ -64,3 +64,12 @@ def test_simultaneous_authentication_writes_once(tmp_path, monkeypatch):
     with ThreadPoolExecutor(max_workers=4) as pool:
         assert all(pool.map(lambda _: TokenStore(path).valid(token), range(4)))
     assert len(writes) == 1
+
+
+def test_requests_are_counted_and_flushed_with_the_throttled_write(tmp_path, monkeypatch):
+    store = TokenStore(tmp_path / "tokens.json")
+    token = store.create("counted")["token"]
+    for now in (1000, 1010, 1020, 1060):
+        monkeypatch.setattr("tokens.time.time", lambda now=now: now)
+        assert store.valid(token)
+        assert store.list()[0]["requests"] == {1000: 1, 1010: 1, 1020: 1, 1060: 4}[now]

@@ -36,7 +36,7 @@ Each calling project gets its own token, so one can be revoked without touching 
   if both methods are blocked, select the token and copy it manually.
 - **Use:** the caller sends it in the `X-Internal-Token` header on every call except `/health`. Citadel: set it as
   `LAYA_TOKEN` in `apps/garrison/.env`, then `docker compose up -d` in Citadel (`restart` does not reload `env_file`).
-- **List:** the table shows **Project**, **Created**, and **Last used**. Last used is **never** until a token
+- **List:** the table shows **Project**, **Created**, **Last used**, and **Requests** (authenticated calls so far). Last used is **never** until a token
   authenticates a request, then a relative time; hover a timestamp for its exact local time. The list refreshes
   every 10 seconds. Token values are not shown again.
 - **Revoke:** press the red-outlined **Revoke** pill and confirm in the in-app dialog, which names the project.
@@ -44,7 +44,8 @@ Each calling project gets its own token, so one can be revoked without touching 
   token = revoke it and create a new one.
 
 Last-used timestamps are Unix seconds or null. They are persisted at most once per minute per token, so they
-are approximate. Old token files without the field still load and show **never** until next use. A companion
+are approximate. Request counts are added to the file with that same write; uses between writes are
+counted in memory, so a crash can lose up to a minute of them. Old token files without the field still load and show **never** until next use. A companion
 `tokens.json.lock` file serializes updates across replicas without adding dependencies.
 
 Tokens live in `tokens.json` (`LAYA_TOKENS_FILE`). In Docker that is the `tokens` volume at `/data`, so they survive

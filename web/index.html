@@ -202,7 +202,7 @@ dialog p { overflow-wrap: anywhere; }
       </div>
       <table id="token-table" hidden>
         <caption class="sr-only">Active project tokens</caption>
-        <thead><tr><th scope="col">Project</th><th scope="col">Created</th><th scope="col">Last used</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <thead><tr><th scope="col">Project</th><th scope="col">Created</th><th scope="col">Last used</th><th scope="col">Requests</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <div id="empty" class="empty" hidden>
@@ -360,6 +360,7 @@ function renderTokens(rows) {
         used.setAttribute("datetime", new Date(row.last_used * 1000).toISOString());
         used.title = new Date(row.last_used * 1000).toLocaleString();
       }
+      previous.children[3].firstElementChild.textContent = row.requests;
       return previous;
     }
     const tr = document.createElement("tr");
@@ -367,11 +368,12 @@ function renderTokens(rows) {
     for (const [label, text, stamp] of [
       ["Project", row.name, null],
       ["Created", new Date(row.created * 1000).toLocaleDateString(undefined, {year: "numeric", month: "short", day: "numeric"}), row.created],
-      ["Last used", row.last_used == null ? "never" : relative(row.last_used), row.last_used]
+      ["Last used", row.last_used == null ? "never" : relative(row.last_used), row.last_used],
+      ["Requests", row.requests, null]
     ]) {
       const td = document.createElement("td");
       td.dataset.label = label;
-      const content = document.createElement(label === "Project" ? "span" : "time");
+      const content = document.createElement(label === "Project" || label === "Requests" ? "span" : "time");
       content.textContent = text;
       if (stamp != null) {
         content.dateTime = new Date(stamp * 1000).toISOString();
