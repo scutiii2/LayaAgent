@@ -98,8 +98,10 @@ def test_each_project_gets_its_own_revocable_token(tmp_path):
     admin = {"X-Internal-Token": "admin"}
     assert c.get("/admin/tokens").status_code == 401
     made = c.post("/admin/tokens", json={"name": "proj"}, headers=admin).json()
+    assert c.get("/admin/tokens", headers=admin).json()["tokens"][0]["last_used"] is None
     use = {"X-Internal-Token": made["token"]}
     assert c.post(path, json=BODY, headers=use).status_code == 200
+    assert c.get("/admin/tokens", headers=admin).json()["tokens"][0]["last_used"] is not None
     assert c.get("/admin/tokens", headers=use).status_code == 401  # a project token is not an admin
     assert "token" not in c.get("/admin/tokens", headers=admin).json()["tokens"][0]
     assert c.delete(f"/admin/tokens/{made['id']}", headers=admin).status_code == 200

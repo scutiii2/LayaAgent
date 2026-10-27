@@ -18,26 +18,43 @@ The page needs the admin password: the value of `LAYA_ADMIN_PASSWORD`.
 - Empty password = no auth at all and the page answers `Admin password required (set LAYA_ADMIN_PASSWORD)`. Set
   one to use the page.
 
-## Sign in
-Type the admin password and press **Load**. A wrong password shows `Wrong admin password`. The password is held in
-the page only: reload the tab and sign in again.
+## Sign in and service status
+Type the admin password and press **Sign in**. A wrong password shows an inline `Wrong admin password` error.
+The password stays in `sessionStorage` for this browser tab, so reloading restores the session. **Sign out** clears
+the password and any freshly created token. If browser storage is blocked, sign in again after reloading.
+
+The header shows the service address and a health badge with an icon and text: **Healthy**, **Starting**, or
+**Unreachable**. Health is checked without authentication every 10 seconds while signed in.
+Tiles show models loaded out of the total, replicas, CPU threads, and active tokens.
+Use **Theme** to cycle between system, light, and dark appearance; this preference is saved in the browser.
 
 ## Tokens
 Each calling project gets its own token, so one can be revoked without touching the others.
-- **Create:** type a project name (up to 64 characters) and press **Create token**. The token appears once as
-  `Copy now, it is not shown again: ...`. Copy it before you do anything else.
+- **Create:** type a project name (up to 64 characters) and press **Create token**. The token appears once in
+  an accent-tinted box with a **Copy** button and the reminder “Shown once. Copy it before you leave.”
+  The box is cleared on the next create attempt or sign-out. Clipboard access has a fallback for plain HTTP;
+  if both methods are blocked, select the token and copy it manually.
 - **Use:** the caller sends it in the `X-Internal-Token` header on every call except `/health`. Citadel: set it as
   `LAYA_TOKEN` in `apps/garrison/.env`, then `docker compose up -d` in Citadel (`restart` does not reload `env_file`).
-- **List:** the table shows project name and creation time. Token values are not shown again.
-- **Revoke:** press **Revoke** on the row and confirm. The caller gets `401 Invalid token` from then on. Lost
+- **List:** the table shows **Project**, **Created**, and **Last used**. Last used is **never** until a token
+  authenticates a request, then a relative time; hover a timestamp for its exact local time. The list refreshes
+  every 10 seconds. Token values are not shown again.
+- **Revoke:** press the red-outlined **Revoke** pill and confirm in the in-app dialog, which names the project.
+  **Cancel**, Escape, or a click on the backdrop closes the dialog. The caller gets `401 Invalid token` from then on. Lost
   token = revoke it and create a new one.
+
+Last-used timestamps are Unix seconds or null. They are persisted at most once per minute per token, so they
+are approximate. Old token files without the field still load and show **never** until next use. A companion
+`tokens.json.lock` file serializes updates across replicas without adding dependencies.
 
 Tokens live in `tokens.json` (`LAYA_TOKENS_FILE`). In Docker that is the `tokens` volume at `/data`, so they survive
 `docker compose down` and rebuilds. Without Docker it is `tokens.json` in the folder the service starts from. Tokens
 are enforced only while `LAYA_ADMIN_PASSWORD` is set.
 
 ## Torch CPU threads
-Field **Torch CPU threads**, then **Apply**.
+Use the synchronized slider or number field, then **Apply**. Both accept 1 to 256. Apply is disabled and
+shows a busy indicator during saving; a short **Saved** confirmation follows. The page states:
+“Saved to settings.json. Other replicas apply it on restart.”
 - Sets how many CPU threads torch uses for each prediction. In a container with a CPU quota torch still counts the
   host's cores, and more threads than the quota makes each prediction several times slower. Start near the number
   of cores the container may use.
@@ -49,8 +66,8 @@ Field **Torch CPU threads**, then **Apply**.
 - `GET /health` reports the value in use as `torch_threads`.
 
 ## Replicas (read-only)
-The line **Replicas: N** shows `LAYA_REPLICAS`. The page cannot change it; each replica loads its own copy of the
-models, so it multiplies RAM. To change it, set `LAYA_REPLICAS` in `.env`, then:
+The replicas tile and muted line **Replicas: N. Change LAYA_REPLICAS in .env, then rebuild.** show `LAYA_REPLICAS`.
+The page cannot change it; each replica loads its own copy of the models, so it multiplies RAM. To change it, set `LAYA_REPLICAS` in `.env`, then:
 ```bash
 docker compose up -d --build
 docker compose restart laya_lb
