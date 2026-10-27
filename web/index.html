@@ -20,8 +20,8 @@
 </head>
 <body>
 <h1>Laya tokens</h1>
-<p>Callers send a token in the <code>X-Internal-Token</code> header. Enter the admin token (<code>LAYA_TOKEN</code>) to manage them.</p>
-<form id="login"><input id="admin" type="password" placeholder="Admin token" autocomplete="off"><button>Load</button></form>
+<p>Callers send a token in the <code>X-Internal-Token</code> header. Enter the admin password (<code>LAYA_ADMIN_PASSWORD</code>) to manage them.</p>
+<form id="login"><input id="admin" type="password" placeholder="Admin password" autocomplete="off"><button>Load</button></form>
 <p id="error"></p>
 <div id="app" hidden>
   <form id="create"><input id="name" placeholder="Project name" required maxlength="64"><button>Create token</button></form>
@@ -36,7 +36,7 @@ async function call(method, path, body, url = "../admin/tokens") {
   const response = await fetch(url + path, {
     method, headers: {"X-Internal-Token": admin, "Content-Type": "application/json"},
     body: body && JSON.stringify(body)});
-  if (!response.ok) throw new Error(response.status === 401 ? "Wrong admin token" : "Request failed (" + response.status + ")");
+  if (!response.ok) throw new Error(response.status === 401 ? "Wrong admin password" : "Request failed (" + response.status + ")");
   return response.json();
 }
 async function refresh() {

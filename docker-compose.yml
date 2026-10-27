@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     environment:
       LAYA_TOKEN: ${LAYA_TOKEN:-}
+      LAYA_ADMIN_PASSWORD: ${LAYA_ADMIN_PASSWORD:-}
       LAYA_WARM: "1"
       LAYA_TORCH_THREADS: ${LAYA_TORCH_THREADS:-}
     volumes:
