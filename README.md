@@ -53,6 +53,13 @@ error/timeout). Each replica keeps its own models in RAM; downloaded weights are
 volume. After changing the replica count, run `docker compose restart laya_lb`. Full guide (standalone vs the
 Citadel stack, first start, scaling, troubleshooting): [deployment.md](deployment.md).
 
+### Guides
+
+- [Docker on the same device](docs/guide-docker-same-device.md)
+- [Docker on a deployment device](docs/guide-docker-deployment-device.md)
+- [Without Docker on the same device](docs/guide-no-docker-same-device.md)
+- [Admin web UI](docs/guide-web-ui.md): tokens and CPU threads at `/admin/`; the same for every run option
+
 ## Settings
 
 `LAYA_HOST` (127.0.0.1), `LAYA_PORT` (9120), `LAYA_ADMIN_PASSWORD` (unlocks `/admin/`; empty = no auth), `LAYA_WARM` (1 loads both models at start), `LAYA_TORCH_THREADS` (cap on torch CPU threads; `/health` reports the value in use),
