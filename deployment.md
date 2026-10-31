@@ -112,3 +112,9 @@ Rebuilding replaces the replicas, so restart `laya_lb` afterwards. The weights v
 | `bind: address already in use` on 9120 | Standalone and Citadel stacks both running. Stop one. |
 | nginx 502 after scaling | `laya_lb` not restarted after the replica count changed. |
 | Offline start fails to load a model | `LAYA_OFFLINE=1` but the weights are not in the `models` volume yet. |
+
+### Releasing
+
+A plain publish (`tools\deploy.bat` option 1) only updates the `live` branch, so it is fine for test deploys. A release is a separate step: set `VERSION` (and `pyproject.toml` where it has a version, to the same number), commit, then run `tools\deploy.bat` option R or `py tools\publish_live.py --release`. That publishes to `live` and tags the `main` commit `vX.Y.Z` and the live commit `live-vX.Y.Z`. A version already released with different live files is refused, so bump `VERSION`. While a version is not officially released yet, add `--replace` to move its tags.
+
+`tools\make_zip.bat` then builds `zip_versions\LayaModel-<VERSION>.zip` (no `tools/`, no git-ignored files, no older ZIPs; `.env.example` is included) and opens GitHub's new-release page for the tag.

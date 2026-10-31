@@ -21,24 +21,26 @@ echo   3  Both (publish, then push)
 echo   4  Preview publish ^(dry run^)
 echo   5  Preview push ^(dry run^)
 echo   6  Fix server folder permissions ^(chown helper^)
+echo   R  Release ^(publish to live, then tag VERSION^)
 echo   Q  Quit
 echo.
-choice /c 123456Q /n /m "What do you want to do? "
+choice /c 123456RQ /n /m "What do you want to do? "
 set "PICK=%errorlevel%"
-if %PICK%==7 exit /b 0
+if %PICK%==8 exit /b 0
 if %PICK%==1 call :publish
 if %PICK%==2 call :push
 if %PICK%==3 call :publish && call :push
 if %PICK%==4 call :publish --dry-run
 if %PICK%==5 call :push --dry-run
 if %PICK%==6 call :fixperms
+if %PICK%==7 call :publish --release
 goto menu
 
-rem :publish [--dry-run]
+rem :publish [--dry-run | --release]
 :publish
 py "%~dp0publish_live.py" %*
 if errorlevel 1 (echo Publish failed. & exit /b 1)
-if "%~1"=="" call :reminder "Code is on the live branch. On the server:" "git pull"
+if /i not "%~1"=="--dry-run" call :reminder "Code is on the live branch. On the server:" "git pull"
 exit /b 0
 
 rem :push [--dry-run]
